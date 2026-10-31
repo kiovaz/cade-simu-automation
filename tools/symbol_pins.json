@@ -8173,9 +8173,22 @@
    0
   ],
   "B_g": 2,
-  "fonte": "binario (A/B sobrescritos)",
+  "fonte": "binario (docs/pinos-binario.json; p3 restaurado 31/10/2026)",
   "n": 3,
-  "pins": {}
+  "pins": {
+   "p1": [
+    0,
+    0
+   ],
+   "p2": [
+    6,
+    0
+   ],
+   "p3": [
+    12,
+    0
+   ]
+  }
  },
  "9042": {
   "A": [

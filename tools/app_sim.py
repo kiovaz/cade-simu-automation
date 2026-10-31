@@ -532,12 +532,15 @@ class AppSim:
         return pos, geo
 
     def _teclado(self):
+        """(x, y, altura) do teclado de senha. A altura varia com o gerenciador de janelas
+        (189 com borda do WM do autor, 174 no openbox/Xvfb): usa a medida real."""
         for w in _xdo("search", "--name", "CADE SIMU 4.0").split():
-            if "176x189" in _xdo("getwindowgeometry", w).replace("Geometry: ", "").replace("\n", " "):
-                pos = [l for l in _xdo("getwindowgeometry", w).splitlines() if "Position" in l]
-                if pos:
-                    x, y = (int(v) for v in pos[0].split()[1].split(","))
-                    return x, y
+            g = _xdo("getwindowgeometry", w)
+            geo = [l.split()[1] for l in g.splitlines() if l.strip().startswith("Geometry:")]
+            pos = [l for l in g.splitlines() if "Position" in l]
+            if geo and pos and geo[0].startswith("176x") and 170 <= int(geo[0].split("x")[1]) <= 195:
+                x, y = (int(v) for v in pos[0].split()[1].split(","))
+                return x, y, int(geo[0].split("x")[1])
         return None
 
     def _desbloqueado(self):
@@ -568,11 +571,12 @@ class AppSim:
                 return False
             k = self._teclado()
             if k and time.time() - ultimo_envio > 4 and envios < 3:
-                x, y = k
-                for tecla in ("4", "9", "6", "2", "OK"):
-                    fx, fy = W.TECLAS[tecla]
-                    _xdo("mousemove", str(int(x + fx * 176)), str(int(y + fy * 189)), "click", "1")
-                    time.sleep(0.2)
+                # teclado de senha: digitar 4962 pelo teclado + Enter funciona em qualquer WM (clicar nas teclas
+                # depende da posicao/borda da janela, que varia: 176x189 no WM do autor, 176x174 no openbox)
+                _xdo("type", "--delay", "150", "4962")
+                time.sleep(0.5)
+                _xdo("key", "Return")
+                time.sleep(0.3)
                 envios += 1
                 ultimo_envio = time.time()
                 self._log(f"senha enviada ({envios}) em {ultimo_envio-t0:.1f}s")
