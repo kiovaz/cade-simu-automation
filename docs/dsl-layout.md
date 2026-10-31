@@ -204,6 +204,21 @@ aninhável; o motor desenha, liga e amarra tudo.
 // e o bloco de comando: {"id":"c1","de":"C1","para":"C2","rede":{...}}
 ```
 
+Disjuntor só do comando (em vez de transformador/fonte):
+
+```jsonc
+"trilhos_comando": {
+  "nomes": ["C1","N"],                                          // C1 novo; a base e um trilho que ja existe
+  "disjuntor": {"id":"Q2","classe":"6010","rotulo":"-Q2","de":"L1"}   // L1 -> Q2 (A) ... (B) -> C1
+}
+// blocos de comando com "de":"C1","para":"N"
+```
+
+O `6010` (1 polo, pinos A/B) desce do trilho `de` até o `C1` (y = topo + 30); o trilho de baixo é
+o `N` principal. Não combina com `transformador`/`fonte` (erro explícito); classe de 3+ terminais
+é recusada. No app o disjuntor **inicia aberto** (clique para fechar), como os demais. Exemplo:
+`reversao_falta_fase` (Rust e Python geram o mesmo `.cad`, byte a byte).
+
 Cria o par de trilhos `C1`/`C2` (y automático; `C2` desce conforme a rede) ao lado das fontes.
 `transformador`: classe `3012` (`-T`, pinos do binário `p1..p4`: primário p1/p2 no topo ligado
 aos trilhos de `primario`, secundário p4->C1 e p3->C2). `fonte`: classe `3003`, por padrão
@@ -241,6 +256,7 @@ A folha segura vem de `tools/sheet.json` (`layout.SHEET_X/Y` = 455x305, unidades
 | `tres_degraus_lampadas` | 3 degraus independentes, lâmpadas, fonte monofásica 3003, `N` desce sozinho |
 | `intertravamento_sinalizacao` | paralelo de séries com paralelos; NA e NF de KM1/KM2 em 4 degraus |
 | `partida_trafo_comando` | `trilhos_comando` (transformador 3012 + fonte 3003), degrau em C1/C2 |
+| `reversao_falta_fase` | `trilhos_comando.disjuntor` (Q2 6010), reversão direta (botão NA + NF de mesmo rótulo), relé falta de fase simulado (chave 8009 + bobina), H1–H4 |
 
 Testes: `python3 -m pytest tools/test_layout_v2.py` (geometria, conectividade por geometria,
 gate dos 5 exemplos, faixas, serpentina, fallback legado, erros de entrada). Casos de

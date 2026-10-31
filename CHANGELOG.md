@@ -2,6 +2,19 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Datas em AAAA-MM-DD.
 
+## [Não lançado]
+
+### Adicionado
+- `trilhos_comando.disjuntor`: disjuntor de 1 polo (`6010`) só do comando, do trilho `de` (ex.: L1)
+  para um trilho novo `C1`, com a base num trilho existente (ex.: N). Python e Rust (`cade_layout`),
+  saída byte-idêntica; 4 casos de erro com golden de paridade.
+- Simulador Python: interruptor retentivo `8008`/`8009` e pulsador seta `8004`/`8005` (1 contato)
+  viram contato NA/NC comandado pelo rótulo — paridade com o Rust (`papeis::derivar`).
+- Exemplo `reversao_falta_fase` (15 testes, `GATE: OK`): reversão direta com botão duplo (NA + NF de
+  mesmo rótulo), disjuntor de comando Q2, relé falta de fase simulado (chave `8009` + bobina `-RFF`;
+  o CADe_SIMU não tem essa classe), H1 motor ligado, H2/H3 sentidos, H4 falta de fase.
+  Skill (`exemplos/04-reversao-falta-fase`) e `docs/dsl-layout.md` atualizados.
+
 ## [0.3.0] — 2026-10-22
 
 Conformidade **com o app real** (11/11), ladder/CLP no Rust e benchmark held-out.

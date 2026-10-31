@@ -77,6 +77,11 @@ endereço `I0.x` → dispositivo; saída → `Q0.x` → carga), como no método 
 | Sem auto-religamento | selo cai ao desligar; teste `esperado: []` após soltar | — |
 | Temporizador / sequencial / intercalado por CLP | **`ladder/1`** (TON em linha no degrau): seção "CLP + ladder" | `10206`, `10066` |
 | Partida estrela-triângulo | **fora da DSL**: avise o limite; veja "esclarecimento" | — |
+| **Disjuntor só do comando** (Q2) | `trilhos_comando: {"nomes":["C1","N"], "disjuntor":{"id":"Q2","classe":"6010","rotulo":"-Q2","de":"L1"}}` e os blocos de comando com `"de":"C1"` | `6010` |
+| **Botão duplo / reversão direta** (inverte sem passar pelo S0) | NA do botão no próprio ramo **e** NF de **mesmo rótulo** no ramo oposto (`["S1","8000","-S1"]` + `["nS1","8001","-S1"]`); o app aciona os dois juntos (pulsador propaga ao mesmo rótulo) | `8000` + `8001` |
+| **Relé falta de fase** (o CADe_SIMU **não tem** essa classe) | simule: degrau `chave SF (NF retentiva) → bobina -RFF`; NA de `-RFF` em série no comando e NF de `-RFF` acendendo H4. Clicar em SF = falta de fase. Ponha o NF do térmico **antes** desse degrau para H4 não acender em sobrecarga | `8009` + `9000` + `7000`/`7001` |
+| Chave/seletor retentivo | `8008` (NA) / `8009` (NC), chave do teste = rótulo; `true` = chave acionada | `8008`/`8009` |
+| "Motor ligado" com reversão | lâmpada em série com `{"paralelo":[NA KM1, NA KM2]}` | `7000` ×2 + `9008` |
 
 Regra de ouro do comando: `trilho_L → [proteções NF em série] → [liga ∥ selo] → [intertravamentos NF] → bobina → trilho_N`.
 Série só passa se fechada; paralelo liga se *qualquer* ramo fechar.
@@ -85,6 +90,9 @@ Série só passa se fechada; paralelo liga se *qualquer* ramo fechar.
 
 - **Trifásica** (1 motor, 2 sentidos): `potencia.paralelo` com dois contatores e `ordem` invertida no
   segundo (L1↔L3) + NF cruzado no comando (`7001`). Exemplo pronto: `reversao`.
+  Reversão **direta** (botão duplo), disjuntor de comando, relé falta de fase e sinalização de sentido:
+  `reversao_falta_fase` (molde completo, 15 testes). Se a rede não couber na folha, separe em
+  `rungs` (degraus) e tire do degrau principal o que não precisa estar em série nele.
 - **Monofásica** (enrolamento principal + auxiliar): a reversão inverte a **ligação relativa de um
   enrolamento** (na prática U2/V2 do auxiliar), **não** troca fase/neutro. Classes do CADe_SIMU:
   motor `1008` (`U1 V1 PE U2 V2`), contatores de **4 polos** `2002`, disjuntor `6004`. A DSL

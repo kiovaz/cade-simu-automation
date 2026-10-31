@@ -1,1 +1,1 @@
-trilhos_comando sem 'transformador' nem 'fonte': o par de trilhos ficaria sem alimentacao
+trilhos_comando sem 'transformador', 'fonte' nem 'disjuntor': o par de trilhos ficaria sem alimentacao

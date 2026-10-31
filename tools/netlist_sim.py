@@ -151,6 +151,19 @@ def _normalizar_papel(e):
     r = dict(e)
     if papel.startswith("sensor") and len(e.get("pinos") or []) > 2:
         return None                              # 3+ fios: sem modelo (A11 recusa)
+    if papel in ("interruptor", "botao_na", "botao_nc"):
+        # contato unico de 2 pinos (8008/8009 interruptor retentivo, 8004/8005 pulsador seta):
+        # entrada externa pelo rotulo, como o 8000/8001. Paridade com o Rust (papeis::derivar,
+        # Papel::Chaves). Multiplos contatos (8010/8011 NA-NC/comutado) seguem sem modelo aqui.
+        contatos = e.get("contatos") or []
+        if len(contatos) != 1 or len(e.get("pinos") or []) != 2:
+            return None
+        fq = str((contatos[0] or {}).get("fecha_quando") or "").strip()
+        if fq not in ("estado==1", "estado==0"):
+            return None
+        r["papel"] = "contato"
+        r["modo"] = "NA" if fq == "estado==1" else "NC"
+        return r
     a = alias.get(papel, papel)
     if isinstance(a, tuple):
         r["papel"] = a[0]

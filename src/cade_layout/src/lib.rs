@@ -414,6 +414,7 @@ fn compilar_interno(spec: &Value) -> R<Low> {
     if let Some(tc) = tc {
         est += (if truthy(tc.get("transformador")) { 15 + 12 } else { 0 })
             + (if truthy(tc.get("fonte")) { 12 } else { 0 })
+            + (if truthy(tc.get("disjuntor")) { 12 } else { 0 })
             + 15;
     }
     let mut reserva_pot = 0;

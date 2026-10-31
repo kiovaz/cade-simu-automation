@@ -192,7 +192,8 @@ def _compilar(spec):
         est += max([_width(f.get("classe", "3007" if f.get("pinos") else "3004"))
                     for f in spec["fontes"]] + [0]) + 15
     if tc:
-        est += (15 + 12 if tc.get("transformador") else 0) + (12 if tc.get("fonte") else 0) + 15
+        est += (15 + 12 if tc.get("transformador") else 0) + (12 if tc.get("fonte") else 0) + \
+               (12 if tc.get("disjuntor") else 0) + 15
     reserva_pot = sum(_pot_largura(pw) + GAP for pw in spec.get("potencia", []))
     util = SHEET_X - MARGEM_X - 40 - reserva_pot - est - SPINE_L - SPINE_R
     _ROWW[0] = util if util >= 120 else None
@@ -740,16 +741,29 @@ class _Ctx:
             nomes = tc.get("nomes") or ["C1", "C2"]
             if len(nomes) != 2:
                 raise ValueError("trilhos_comando.nomes: exatamente 2 trilhos [topo, base]")
-            if not (tc.get("transformador") or tc.get("fonte")):
-                raise ValueError("trilhos_comando sem 'transformador' nem 'fonte': o par de trilhos ficaria "
-                                 "sem alimentacao")
+            if not (tc.get("transformador") or tc.get("fonte") or tc.get("disjuntor")):
+                raise ValueError("trilhos_comando sem 'transformador', 'fonte' nem 'disjuntor': o par de "
+                                 "trilhos ficaria sem alimentacao")
+            if tc.get("disjuntor") and (tc.get("transformador") or tc.get("fonte")):
+                raise ValueError("trilhos_comando: 'disjuntor' nao combina com 'transformador'/'fonte' "
+                                 "(o disjuntor alimenta o trilho de cima a partir de um trilho existente)")
             self.c_nomes = nomes
+            self.c_criados = set()
             if nomes[0] not in R:
-                self._novo_trilho(nomes[0], self.top0 + (30 if tc.get("transformador") else 14),
-                                  self.x0, self.x0)
+                desce = 30 if (tc.get("transformador") or tc.get("disjuntor")) else 14
+                self._novo_trilho(nomes[0], self.top0 + desce, self.x0, self.x0)
+                self.c_criados.add(nomes[0])
             if nomes[1] not in R:
                 self._novo_trilho(nomes[1], -10 ** 6, self.x0, self.x0)
                 auto.add(nomes[1])
+                self.c_criados.add(nomes[1])
+            if tc.get("disjuntor"):
+                if nomes[0] in R and nomes[0] not in self.c_criados:
+                    raise ValueError(f"trilhos_comando.disjuntor: o trilho de cima '{nomes[0]}' tem de ser novo "
+                                     f"(ex.: 'C1'); ele recebe a saida do disjuntor")
+                if nomes[1] in self.c_criados:
+                    raise ValueError(f"trilhos_comando.disjuntor: o trilho de baixo '{nomes[1]}' tem de existir "
+                                     f"(ex.: 'N'); so o de cima e alimentado pelo disjuntor")
         sheet_y = SHEET_Y
         for blk in blocos:
             if not _eh_rede(blk):
@@ -874,6 +888,27 @@ def _fonte_comando(L, ctx, tc, x, top0):
     xmax = x
     xi = x
     x_c1, x_c2 = [], []
+    dj = tc.get("disjuntor")
+    if dj:
+        # disjuntor de comando (6010, 1 polo; pinos A em cima, B embaixo): trilho existente `de`
+        # (ex.: L1) -> A; B -> trilho de cima (C1). O trilho de baixo e um ja existente (ex.: N).
+        cl = str(dj.get("classe", "6010"))
+        qid = dj.get("id", "Q2")
+        de = dj.get("de", "L1")
+        if de not in ctx.R or de in (c1, c2):
+            raise ValueError(f"trilhos_comando.disjuntor.de: '{de}' tem de ser um trilho existente "
+                             f"(ex.: 'L1'); trilhos: {sorted(ctx.R)}")
+        info = PINS.get(cl, {})
+        if len(info.get("pins") or {}) > 2 or "A" not in info or "B" not in info:
+            raise ValueError(f"trilhos_comando.disjuntor: classe {cl} precisa de 2 terminais A/B "
+                             f"(use 6010, disjuntor de 1 polo)")
+        L.sym(qid, cl, dj.get("rotulo", "-Q2"), xi, top0)
+        L.con((qid, "A"), (de, "rail"))
+        L.con((qid, "B"), (c1, "rail"))
+        x_c1.append(xi + pin_off(cl, "B")[0])
+        xmax = xi + _width(cl)
+        ctx.R[c1]["x0"] = ctx.R[c1]["x1"] = min(x_c1)
+        return xmax
     tr = tc.get("transformador")
     if tr:
         cl = tr.get("classe", "3012")

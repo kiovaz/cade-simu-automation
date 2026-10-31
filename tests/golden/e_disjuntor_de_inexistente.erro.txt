@@ -1,0 +1,1 @@
+trilhos_comando.disjuntor.de: 'L9' tem de ser um trilho existente (ex.: 'L1'); trilhos: ['C1', 'L1', 'N']

@@ -1,0 +1,480 @@
+{
+  "titulo": "REVERSAO COM FALTA DE FASE",
+  "descricao": "Reversao direta de motor trifasico com rele de falta de fase. Forca: Q1, KM1 (horario) || KM2 (anti-horario, L1<->L3), RT1, M1 com PE. Comando alimentado por Q2 (disjuntor 1 polo, trilhos_comando.disjuntor) no trilho C1. Degrau 1: RT1 95-96 em serie com o rele de falta de fase simulado (chave SF NF -> bobina RFF; abrir SF = falta de fase) e com H4 (NF de RFF): H4 so acende em falta de fase, nao em sobrecarga. Degrau 2: NA de RFF, S0 NF e tres ramos: S1 NA || selo KM1, NF de S2 (botao duplo), NF de KM2, KM1 || H2 (horario); espelhado para KM2/H3; H1 motor ligado (NA KM1 || NA KM2). O CADe_SIMU nao tem classe de rele de falta de fase: a chave SF faz o papel do sensor de fases.",
+  "layout": {
+    "trilhos": {
+      "L1": 14,
+      "L2": 20,
+      "L3": 26,
+      "N": 282,
+      "x0": 25,
+      "x1": 440,
+      "PE": 291
+    },
+    "fontes": [
+      {
+        "id": "X1",
+        "classe": "3007",
+        "rotulo": "-X",
+        "pinos": {
+          "L1": "L1",
+          "L2": "L2",
+          "L3": "L3",
+          "N": "N",
+          "PE": "PE"
+        }
+      }
+    ],
+    "trilhos_comando": {
+      "nomes": [
+        "C1",
+        "N"
+      ],
+      "disjuntor": {
+        "id": "Q2",
+        "classe": "6010",
+        "rotulo": "-Q2",
+        "de": "L1"
+      }
+    },
+    "comando": [
+      {
+        "id": "c1",
+        "de": "C1",
+        "para": "N",
+        "rungs": [
+          {
+            "serie": [
+              [
+                "RT1",
+                "8017",
+                "-RT1"
+              ],
+              {
+                "paralelo": [
+                  {
+                    "serie": [
+                      [
+                        "SF",
+                        "8009",
+                        "-SF"
+                      ],
+                      [
+                        "RFF",
+                        "9000",
+                        "-RFF"
+                      ]
+                    ]
+                  },
+                  {
+                    "serie": [
+                      [
+                        "nrff",
+                        "7001",
+                        "-RFF"
+                      ],
+                      [
+                        "H4",
+                        "9008",
+                        "-H4"
+                      ]
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "serie": [
+              [
+                "rff",
+                "7000",
+                "-RFF"
+              ],
+              [
+                "S0",
+                "8001",
+                "-S0"
+              ],
+              {
+                "paralelo": [
+                  {
+                    "serie": [
+                      {
+                        "paralelo": [
+                          [
+                            "S1",
+                            "8000",
+                            "-S1"
+                          ],
+                          [
+                            "selo1",
+                            "7000",
+                            "-KM1"
+                          ]
+                        ]
+                      },
+                      [
+                        "nS2",
+                        "8001",
+                        "-S2"
+                      ],
+                      [
+                        "nkm2",
+                        "7001",
+                        "-KM2"
+                      ],
+                      {
+                        "paralelo": [
+                          [
+                            "KM1",
+                            "9000",
+                            "-KM1"
+                          ],
+                          [
+                            "H2",
+                            "9008",
+                            "-H2"
+                          ]
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "serie": [
+                      {
+                        "paralelo": [
+                          [
+                            "S2",
+                            "8000",
+                            "-S2"
+                          ],
+                          [
+                            "selo2",
+                            "7000",
+                            "-KM2"
+                          ]
+                        ]
+                      },
+                      [
+                        "nS1",
+                        "8001",
+                        "-S1"
+                      ],
+                      [
+                        "nkm1",
+                        "7001",
+                        "-KM1"
+                      ],
+                      {
+                        "paralelo": [
+                          [
+                            "KM2",
+                            "9000",
+                            "-KM2"
+                          ],
+                          [
+                            "H3",
+                            "9008",
+                            "-H3"
+                          ]
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "serie": [
+                      {
+                        "paralelo": [
+                          [
+                            "km1h",
+                            "7000",
+                            "-KM1"
+                          ],
+                          [
+                            "km2h",
+                            "7000",
+                            "-KM2"
+                          ]
+                        ]
+                      },
+                      [
+                        "H1",
+                        "9008",
+                        "-H1"
+                      ]
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "potencia": [
+      {
+        "id": "m1",
+        "fases": [
+          "L1",
+          "L2",
+          "L3"
+        ],
+        "neutro": "N",
+        "pe": "PE",
+        "colunas": [
+          [
+            "Q1",
+            "6009",
+            "-Q1"
+          ],
+          {
+            "paralelo": [
+              [
+                "KM1p",
+                "2001",
+                "-KM1"
+              ],
+              [
+                "KM2p",
+                "2001",
+                "-KM2",
+                {
+                  "ordem": [
+                    "L3",
+                    "L2",
+                    "L1"
+                  ]
+                }
+              ]
+            ]
+          },
+          [
+            "F1",
+            "6007",
+            "-RT1"
+          ],
+          [
+            "M1",
+            "1000",
+            "-M1"
+          ]
+        ]
+      }
+    ]
+  },
+  "testes": [
+    {
+      "nome": "repouso: tudo desligado, sem falta",
+      "entradas": {},
+      "esperado": [
+        "RFF"
+      ],
+      "esperado_lampadas": [],
+      "status": "OK"
+    },
+    {
+      "nome": "S1 liga horario",
+      "entradas": {
+        "S1": true
+      },
+      "esperado": [
+        "RFF",
+        "KM1"
+      ],
+      "esperado_lampadas": [
+        "H1",
+        "H2"
+      ],
+      "status": "OK"
+    },
+    {
+      "nome": "S2 liga anti-horario",
+      "entradas": {
+        "S2": true
+      },
+      "esperado": [
+        "RFF",
+        "KM2"
+      ],
+      "esperado_lampadas": [
+        "H1",
+        "H3"
+      ],
+      "status": "OK"
+    },
+    {
+      "nome": "selo mantem horario",
+      "entradas": {},
+      "inicial": [
+        "RFF",
+        "KM1"
+      ],
+      "esperado": [
+        "RFF",
+        "KM1"
+      ],
+      "esperado_lampadas": [
+        "H1",
+        "H2"
+      ],
+      "status": "OK"
+    },
+    {
+      "nome": "selo mantem anti-horario",
+      "entradas": {},
+      "inicial": [
+        "RFF",
+        "KM2"
+      ],
+      "esperado": [
+        "RFF",
+        "KM2"
+      ],
+      "esperado_lampadas": [
+        "H1",
+        "H3"
+      ],
+      "status": "OK"
+    },
+    {
+      "nome": "reversao direta: S2 com horario ligado inverte sem S0",
+      "entradas": {
+        "S2": true
+      },
+      "inicial": [
+        "RFF",
+        "KM1"
+      ],
+      "esperado": [
+        "RFF",
+        "KM2"
+      ],
+      "esperado_lampadas": [
+        "H1",
+        "H3"
+      ],
+      "status": "OK"
+    },
+    {
+      "nome": "reversao direta: S1 com anti-horario ligado inverte sem S0",
+      "entradas": {
+        "S1": true
+      },
+      "inicial": [
+        "RFF",
+        "KM2"
+      ],
+      "esperado": [
+        "RFF",
+        "KM1"
+      ],
+      "esperado_lampadas": [
+        "H1",
+        "H2"
+      ],
+      "status": "OK"
+    },
+    {
+      "nome": "S1 e S2 juntos: nenhum liga",
+      "entradas": {
+        "S1": true,
+        "S2": true
+      },
+      "esperado": [
+        "RFF"
+      ],
+      "esperado_lampadas": [],
+      "status": "OK"
+    },
+    {
+      "nome": "S0 desliga horario",
+      "entradas": {
+        "S0": true
+      },
+      "inicial": [
+        "RFF",
+        "KM1"
+      ],
+      "esperado": [
+        "RFF"
+      ],
+      "esperado_lampadas": [],
+      "status": "OK"
+    },
+    {
+      "nome": "S0 desliga anti-horario",
+      "entradas": {
+        "S0": true
+      },
+      "inicial": [
+        "RFF",
+        "KM2"
+      ],
+      "esperado": [
+        "RFF"
+      ],
+      "esperado_lampadas": [],
+      "status": "OK"
+    },
+    {
+      "nome": "sobrecarga (RT1) desliga, sem acender H4",
+      "entradas": {
+        "RT1": true
+      },
+      "inicial": [
+        "RFF",
+        "KM1"
+      ],
+      "esperado": [],
+      "esperado_lampadas": [],
+      "status": "OK"
+    },
+    {
+      "nome": "falta de fase desliga e acende H4",
+      "entradas": {
+        "SF": true
+      },
+      "inicial": [
+        "RFF",
+        "KM1"
+      ],
+      "esperado": [],
+      "esperado_lampadas": [
+        "H4"
+      ],
+      "status": "OK"
+    },
+    {
+      "nome": "falta de fase impede partida",
+      "entradas": {
+        "SF": true,
+        "S1": true
+      },
+      "esperado": [],
+      "esperado_lampadas": [
+        "H4"
+      ],
+      "status": "OK"
+    },
+    {
+      "nome": "sobrecarga impede partida",
+      "entradas": {
+        "RT1": true,
+        "S1": true
+      },
+      "esperado": [],
+      "esperado_lampadas": [],
+      "status": "OK"
+    },
+    {
+      "nome": "sem auto-religamento",
+      "entradas": {},
+      "esperado": [
+        "RFF"
+      ],
+      "esperado_lampadas": [],
+      "status": "OK"
+    }
+  ]
+}
