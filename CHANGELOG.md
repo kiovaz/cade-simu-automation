@@ -4,6 +4,22 @@ Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). 
 
 ## [Não lançado]
 
+### Validado no app real (Wine, 31/10/2026)
+- `reversao_falta_fase` (relé simulado): 14/14 casos no CADe_SIMU (o 15º, "S1 e S2 juntos", não é
+  testável: o `app_sim` tem um ponteiro só).
+- **Relé de falta de fase real = classe `9041`** (rótulo `-RFF`; achada nos exemplos `caixad'agua.cad` e
+  `diagrama de bombas intercaladas.cad` do curso). Energiza com L1/L2/L3 nos pinos p1/p2/p3 e comanda por
+  rótulo os contatos `7000`/`7001` (sem L3: NF fecha; com L3: NA fecha). `tools/extras/` monta a reversão
+  com ele (+ relé auxiliar `-KA1`) e valida no app: 14/14.
+
+### Corrigido (`app_sim` em Wine/openbox)
+- Senha do app: digitar `4962` + Enter (a posição/tamanho do teclado varia com o gerenciador de janelas;
+  no Windows nativo o app nem pede senha).
+- Origem da janela: `xdotool` reporta +20 px em y no openbox; usa `xwininfo` (origem absoluta do client,
+  a mesma do `import -window`). Sem isso todo clique caía 20 px abaixo (Play, disjuntores, botões).
+- Chaves `8008`..`8011` (interruptor retentivo) acionáveis (`alternar`); `descobrir_iniciais` fecha os
+  disjuntores antes de procurar a sequência (disjuntor no caminho do comando).
+
 ### Adicionado
 - `trilhos_comando.disjuntor`: disjuntor de 1 polo (`6010`) só do comando, do trilho `de` (ex.: L1)
   para um trilho novo `C1`, com a base num trilho existente (ex.: N). Python e Rust (`cade_layout`),
