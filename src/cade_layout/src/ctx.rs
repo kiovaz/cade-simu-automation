@@ -3,7 +3,7 @@
 
 use crate::rede::{self, degrau, expr, med, quebrar, No, CHUNK_GAP, GN, MARGEM_X, RUNG_GAP};
 use crate::{dim, eh_rede, get, pin_off, req, str_or, truthy, val, width, Env, Layout, Rail, R};
-use cade_model::pyfmt;
+use cade_model::{dados, pyfmt};
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -109,21 +109,48 @@ impl Motor {
             if nomes.len() != 2 {
                 return Err(val("trilhos_comando.nomes: exatamente 2 trilhos [topo, base]".into()));
             }
-            if !(truthy(tc.get("transformador")) || truthy(tc.get("fonte"))) {
+            let tem_tr = truthy(tc.get("transformador"));
+            let tem_fo = truthy(tc.get("fonte"));
+            let tem_dj = truthy(tc.get("disjuntor"));
+            if !(tem_tr || tem_fo || tem_dj) {
                 return Err(val(
-                    "trilhos_comando sem 'transformador' nem 'fonte': o par de trilhos ficaria sem alimentacao".into(),
+                    "trilhos_comando sem 'transformador', 'fonte' nem 'disjuntor': o par de trilhos ficaria sem alimentacao"
+                        .into(),
+                ));
+            }
+            if tem_dj && (tem_tr || tem_fo) {
+                return Err(val(
+                    "trilhos_comando: 'disjuntor' nao combina com 'transformador'/'fonte' (o disjuntor alimenta o trilho de cima a partir de um trilho existente)"
+                        .into(),
                 ));
             }
             self.c_nomes = Some((nomes[0].clone(), nomes[1].clone()));
+            let mut criados: Vec<String> = Vec::new();
             if !self.tem_trilho(&nomes[0]) {
-                let y = self.top0 + if truthy(tc.get("transformador")) { 30 } else { 14 };
+                let y = self.top0 + if tem_tr || tem_dj { 30 } else { 14 };
                 let x0 = self.x0;
                 self.novo_trilho(&nomes[0], y, x0, x0);
+                criados.push(nomes[0].clone());
             }
             if !self.tem_trilho(&nomes[1]) {
                 let x0 = self.x0;
                 self.novo_trilho(&nomes[1], FORA, x0, x0);
                 auto.push(nomes[1].clone());
+                criados.push(nomes[1].clone());
+            }
+            if tem_dj {
+                if self.tem_trilho(&nomes[0]) && !criados.contains(&nomes[0]) {
+                    return Err(val(format!(
+                        "trilhos_comando.disjuntor: o trilho de cima '{}' tem de ser novo (ex.: 'C1'); ele recebe a saida do disjuntor",
+                        nomes[0]
+                    )));
+                }
+                if criados.contains(&nomes[1]) {
+                    return Err(val(format!(
+                        "trilhos_comando.disjuntor: o trilho de baixo '{}' tem de existir (ex.: 'N'); so o de cima e alimentado pelo disjuntor",
+                        nomes[1]
+                    )));
+                }
             }
         }
         let sheet_y = self.env.sheet_y;
@@ -273,6 +300,41 @@ impl Motor {
         let mut xi = x;
         let mut x_c1: Vec<i64> = vec![];
         let mut x_c2: Vec<i64> = vec![];
+        if let Some(dj) = get(tc, "disjuntor").filter(|v| pyfmt::verdadeiro(v)) {
+            // disjuntor de comando (6010, 1 polo; A em cima, B embaixo): trilho existente `de` -> A;
+            // B -> trilho de cima (C1). O trilho de baixo e um ja existente (ex.: N).
+            let cl = str_or(dj, "classe", "6010");
+            let qid = str_or(dj, "id", "Q2");
+            let de = str_or(dj, "de", "L1");
+            if !self.tem_trilho(&de) || de == c1 || de == c2 {
+                return Err(val(format!(
+                    "trilhos_comando.disjuntor.de: '{}' tem de ser um trilho existente (ex.: 'L1'); trilhos: {}",
+                    de,
+                    pyfmt::repr_lista(&self.nomes_ordenados())
+                )));
+            }
+            let ok = dados::symbol_pins()
+                .get(&cl)
+                .map(|i| i.pins.len() <= 2 && i.a.is_some() && i.b.is_some())
+                .unwrap_or(false);
+            if !ok {
+                return Err(val(format!(
+                    "trilhos_comando.disjuntor: classe {} precisa de 2 terminais A/B (use 6010, disjuntor de 1 polo)",
+                    cl
+                )));
+            }
+            self.l.sym(&qid, &cl, &str_or(dj, "rotulo", "-Q2"), xi, top0)?;
+            self.l.con((qid.as_str(), "A"), (de.as_str(), "rail"));
+            self.l.con((qid.as_str(), "B"), (c1.as_str(), "rail"));
+            let bx = xi + pin_off(&cl, "B")?[0];
+            xmax = xi + width(&cl);
+            {
+                let r = self.r(&c1);
+                r.x0 = bx;
+                r.x1 = bx;
+            }
+            return Ok(xmax);
+        }
         if let Some(tr) = get(tc, "transformador").filter(|v| pyfmt::verdadeiro(v)) {
             let cl = str_or(tr, "classe", "3012");
             let tid = str_or(tr, "id", "T1");

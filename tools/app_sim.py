@@ -152,7 +152,7 @@ class Cad:
                 continue
             if s["tipo"] == "botoeira":
                 out.setdefault(k, {"simbolo": s, "modo": "segurar", "nota": ""})
-            elif s["tipo"] == "disjuntor":
+            elif s["tipo"] in ("disjuntor", "interruptor"):
                 out.setdefault(k, {"simbolo": s, "modo": "alternar", "nota": ""})
             elif s["classe"] == "6007":
                 out.setdefault(k, {"simbolo": s, "modo": "alternar", "nota": "disparo do termico (clique)"})
@@ -190,6 +190,8 @@ def tipo_simbolo(cid):
         return "contato_aux_termico"             # contato NA 97-98
     if cid in ("7000", "7001", "10050", "10051"):
         return "contato"
+    if cid in ("8008", "8009", "8010", "8011"):
+        return "interruptor"                       # chave retentiva: clique alterna (8009 NF conduz em repouso)
     if cid in ("6000", "6001", "6002", "6003", "6004", "6008", "6009", "6010", "6011", "6012"):
         return "disjuntor"                         # DJ1 6002/6003: de mesmo rotulo do aux 8016; alterna ANTES do teste
     if cid in SAIDA_CLP:
@@ -529,15 +531,33 @@ class AppSim:
                 pos = tuple(int(v) for v in s.split()[1].split(","))
             elif s.startswith("Geometry:"):
                 geo = tuple(int(v) for v in s.split()[1].split("x"))
+        # `Position` do xdotool inclui a decoracao do WM em alguns gerenciadores (openbox: +1,+20 em
+        # relacao ao client); o xwininfo da a origem ABSOLUTA do client, que e a do `import -window`.
+        try:
+            r = subprocess.run(["xwininfo", "-id", str(self.win)], env=dict(os.environ, DISPLAY=DISP),
+                               capture_output=True, text=True, timeout=5)
+            ax = ay = None
+            for ln in r.stdout.splitlines():
+                if "Absolute upper-left X" in ln:
+                    ax = int(ln.split(":")[1])
+                elif "Absolute upper-left Y" in ln:
+                    ay = int(ln.split(":")[1])
+            if ax is not None and ay is not None:
+                pos = (ax, ay)
+        except (OSError, ValueError, subprocess.SubprocessError):
+            pass
         return pos, geo
 
     def _teclado(self):
+        """(x, y, altura) do teclado de senha. A altura varia com o gerenciador de janelas
+        (189 com borda do WM do autor, 174 no openbox/Xvfb): usa a medida real."""
         for w in _xdo("search", "--name", "CADE SIMU 4.0").split():
-            if "176x189" in _xdo("getwindowgeometry", w).replace("Geometry: ", "").replace("\n", " "):
-                pos = [l for l in _xdo("getwindowgeometry", w).splitlines() if "Position" in l]
-                if pos:
-                    x, y = (int(v) for v in pos[0].split()[1].split(","))
-                    return x, y
+            g = _xdo("getwindowgeometry", w)
+            geo = [l.split()[1] for l in g.splitlines() if l.strip().startswith("Geometry:")]
+            pos = [l for l in g.splitlines() if "Position" in l]
+            if geo and pos and geo[0].startswith("176x") and 170 <= int(geo[0].split("x")[1]) <= 195:
+                x, y = (int(v) for v in pos[0].split()[1].split(","))
+                return x, y, int(geo[0].split("x")[1])
         return None
 
     def _desbloqueado(self):
@@ -568,11 +588,12 @@ class AppSim:
                 return False
             k = self._teclado()
             if k and time.time() - ultimo_envio > 4 and envios < 3:
-                x, y = k
-                for tecla in ("4", "9", "6", "2", "OK"):
-                    fx, fy = W.TECLAS[tecla]
-                    _xdo("mousemove", str(int(x + fx * 176)), str(int(y + fy * 189)), "click", "1")
-                    time.sleep(0.2)
+                # teclado de senha: digitar 4962 pelo teclado + Enter funciona em qualquer WM (clicar nas teclas
+                # depende da posicao/borda da janela, que varia: 176x189 no WM do autor, 176x174 no openbox)
+                _xdo("type", "--delay", "150", "4962")
+                time.sleep(0.5)
+                _xdo("key", "Return")
+                time.sleep(0.3)
                 envios += 1
                 ultimo_envio = time.time()
                 self._log(f"senha enviada ({envios}) em {ultimo_envio-t0:.1f}s")
@@ -828,7 +849,7 @@ def _executa_entradas(app, entradas, aliases=None):
     return seg, len(botoes) > 1
 
 
-def descobrir_iniciais(app, alvos, profundidade=2, max_probes=24):
+def descobrir_iniciais(app, alvos, profundidade=2, max_probes=24, ligar_disjuntores=False):
     """Para cada alvo (frozenset de bobinas) acha uma sequencia de botoeiras (pulso) que o produz.
     BFS com replay (stop/play entre tentativas). -> {alvo: [chaves...] | None}"""
     ents = app.cad.entradas()
@@ -850,6 +871,10 @@ def descobrir_iniciais(app, alvos, profundidade=2, max_probes=24):
             seq = caminho + [b]
             probes += 1
             app.reiniciar()
+            if ligar_disjuntores:        # disjuntor no caminho do comando: sem fechar, nenhum estado e alcancavel
+                for sd in app.cad.simbolos:
+                    if sd["tipo"] == "disjuntor":
+                        app.alternar(sd["chave"], espera=0.3)
             for k in seq:
                 app.pressionar(k, segurar_s=0.5)
                 time.sleep(0.4)
@@ -893,7 +918,7 @@ def executar_casos(cad, casos=None, saida=None, verbose=False, manter=False, lig
             out["avisos"].append(f"simbolos fora da janela (nao lidos): {rep['fora_da_janela']}")
         # estados iniciais que os casos pedem
         alvos = {frozenset(norm(k) for k in (c.get("inicial") or [])) for c in casos}
-        seqs = descobrir_iniciais(app, alvos) if any(alvos) else {a: [] for a in alvos}
+        seqs = descobrir_iniciais(app, alvos, ligar_disjuntores=ligar_disjuntores) if any(alvos) else {a: [] for a in alvos}
         todos_ok = True
         for i, c in enumerate(casos):
             nome = c.get("nome", f"caso{i}")

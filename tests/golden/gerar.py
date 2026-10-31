@@ -82,6 +82,15 @@ ERROS["e_trilho_inexistente"] = _s
 _s = mono([rung(0)])
 _s["trilhos_comando"] = {"nomes": ["C1", "C2"]}
 ERROS["e_trilhos_comando_sem_fonte"] = _s
+for _nome, _tc in (
+        ("e_disjuntor_de_inexistente", {"nomes": ["C1", "N"], "disjuntor": {"id": "Q2", "de": "L9"}}),
+        ("e_disjuntor_base_nova", {"nomes": ["C1", "C2"], "disjuntor": {"id": "Q2", "de": "L1"}}),
+        ("e_disjuntor_3_polos", {"nomes": ["C1", "N"], "disjuntor": {"id": "Q2", "de": "L1", "classe": "6009"}}),
+        ("e_disjuntor_com_fonte", {"nomes": ["C1", "N"], "disjuntor": {"id": "Q2"}, "fonte": {"id": "X2"}})):
+    _s = mono([rung(0)])
+    _s["comando"][0]["de"] = "C1"
+    _s["trilhos_comando"] = _tc
+    ERROS[_nome] = _s
 
 # specs BAIXAS (cad_build direto): exercitam o roteador sem o motor de layout
 BAIXAS = {

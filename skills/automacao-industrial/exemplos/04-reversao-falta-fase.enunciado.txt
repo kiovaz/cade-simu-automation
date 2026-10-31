@@ -1,0 +1,7 @@
+Partida com REVERSAO DIRETA de um motor trifasico, com disjuntor na forca (-Q1) e outro so no comando (-Q2), contatores -KM1 (horario) e -KM2 (anti-horario, inverte L1<->L3), rele termico -RT1, rele de falta de fase -RFF com sinalizador -H4, sinalizador de motor ligado -H1 e dos sentidos -H2 (horario) e -H3 (anti-horario). -S1/-S2 ligam cada sentido e, com o motor girando, apertar o botao do outro sentido inverte direto (botao duplo NA+NF), sem passar pelo -S0.
+
+Restricoes:
+- Use UMA fonte trifasica multi-terminal (classe 3007) e trilho PE separado do neutro.
+- O CADe_SIMU nao tem rele de falta de fase: simule com uma chave -SF (NF retentiva, 8009) alimentando a bobina -RFF; abrir -SF = falta de fase.
+- H4 so pode acender em falta de fase (nao em sobrecarga).
+- Os rotulos dos simbolos devem ser exatamente os do enunciado (os testes usam esses nomes).

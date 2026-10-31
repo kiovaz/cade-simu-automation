@@ -488,6 +488,18 @@ def test_classe_nova_via_papeis_entra_no_modelo(cads, tmp_path):
     assert com.estado({"S1": True})["bobinas"] == ["KM1"]
 
 
+
+def test_interruptor_e_pulsador_seta_de_um_contato_viram_contato():
+    """8008/8009 (interruptor retentivo) e 8004/8005 (pulsador seta): 1 contato -> NA/NC por
+    fecha_quando, entrada pelo rotulo (paridade com o Rust). 8010/8011 (2+ contatos) sem modelo."""
+    import netlist_sim as ns
+    pap = ns.carregar_papeis()
+    assert pap["8008"]["papel"] == "contato" and pap["8008"]["modo"] == "NA"
+    assert pap["8009"]["papel"] == "contato" and pap["8009"]["modo"] == "NC"
+    assert pap["8004"]["modo"] == "NA" and pap["8005"]["modo"] == "NC"
+    assert "8010" not in pap and "8011" not in pap
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
 

@@ -1,0 +1,26 @@
+{
+ "entrada": "tests/golden/e_disjuntor_com_fonte.layout.json",
+ "tipo": "design",
+ "titulo": null,
+ "n_simbolos": null,
+ "build": {
+  "ok": false,
+  "mensagem": ""
+ },
+ "geo": {
+  "curtos": [],
+  "soltos": [],
+  "curtos_msg": [],
+  "soltos_msg": []
+ },
+ "fios": {
+  "ok": null,
+  "n": 0,
+  "atravessam": []
+ },
+ "avisos": [],
+ "erros": [
+  "layout invalido: trilhos_comando: 'disjuntor' nao combina com 'transformador'/'fonte' (o disjuntor alimenta o trilho de cima a partir de um trilho existente)"
+ ],
+ "estatico_ok": false
+}

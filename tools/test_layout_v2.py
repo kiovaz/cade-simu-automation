@@ -17,7 +17,7 @@ import layout  # noqa: E402
 
 EX = TOOLS / "examples"
 NOVOS = ["liga_desliga_2pontos", "partida_sequencial", "tres_degraus_lampadas",
-         "intertravamento_sinalizacao", "partida_trafo_comando"]
+         "intertravamento_sinalizacao", "partida_trafo_comando", "reversao_falta_fase"]
 LEGADOS = ["intercalada", "partida_direta", "reversao", "dois_motores_independentes",
            "partida_emergencia", "partida_sinalizacao"]
 
@@ -232,6 +232,39 @@ def test_trilhos_comando_exige_alimentacao():
     s = mono([rung(0)])
     s["trilhos_comando"] = {"nomes": ["C1", "C2"]}
     with pytest.raises(ValueError, match="alimentacao"):
+        layout.compilar(s)
+
+
+def test_trilhos_comando_disjuntor_alimenta_c1():
+    """trilhos_comando.disjuntor: L1 -> Q2 (6010) -> C1; a base e um trilho existente (N)."""
+    with tempfile.TemporaryDirectory() as t:
+        d = json.loads((EX / "reversao_falta_fase.layout.json").read_text(encoding="utf-8"))["layout"]
+        out, r = _build(d, t, "dj")
+        redes, curtos, soltos = _redes(out)
+        assert not curtos and not soltos
+        R = lambda rot, cid, pino: redes[(rot, cid, pino)]            # noqa: E731
+        c1 = R("-Q2", "6010", "p2")
+        assert R("-Q2", "6010", "p1") == R("-X", "3007", "L1")           # entrada do disjuntor no L1
+        assert c1 != R("-X", "3007", "L1")                               # saida separada (C1)
+        assert R("-RT1", "8017", "p1") == c1 and R("-RFF", "7000", "p1") == c1   # degraus no C1
+        assert R("-H1", "9008", "p2") == R("-X", "3007", "N")            # base = N principal
+        assert not [k for k in redes if k[1] in ("3003", "3012")]        # sem fonte/trafo extra
+
+
+def test_trilhos_comando_disjuntor_erros():
+    s = mono([rung(0)])
+    s["comando"][0]["de"] = "C1"
+    s["trilhos_comando"] = {"nomes": ["C1", "N"], "disjuntor": {"id": "Q2", "de": "L9"}}
+    with pytest.raises(ValueError, match="trilho existente"):
+        layout.compilar(s)
+    s["trilhos_comando"] = {"nomes": ["C1", "C2"], "disjuntor": {"id": "Q2", "de": "L1"}}
+    with pytest.raises(ValueError, match="tem de existir"):
+        layout.compilar(s)
+    s["trilhos_comando"] = {"nomes": ["C1", "N"], "disjuntor": {"id": "Q2", "de": "L1", "classe": "6009"}}
+    with pytest.raises(ValueError, match="2 terminais"):
+        layout.compilar(s)
+    s["trilhos_comando"] = {"nomes": ["C1", "N"], "disjuntor": {"id": "Q2"}, "fonte": {"id": "X2"}}
+    with pytest.raises(ValueError, match="nao combina"):
         layout.compilar(s)
 
 

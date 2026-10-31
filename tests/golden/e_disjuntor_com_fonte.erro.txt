@@ -1,0 +1,1 @@
+trilhos_comando: 'disjuntor' nao combina com 'transformador'/'fonte' (o disjuntor alimenta o trilho de cima a partir de um trilho existente)

@@ -1,0 +1,24 @@
+{
+ "entrada": "tests/golden/reversao_falta_fase.layout.json",
+ "tipo": "design",
+ "titulo": "REVERSAO COM FALTA DE FASE",
+ "n_simbolos": 29,
+ "build": {
+  "ok": true,
+  "mensagem": "188 entidades -> {OUT} | OK {OUT} modo=0 versao=4000"
+ },
+ "geo": {
+  "curtos": [],
+  "soltos": [],
+  "curtos_msg": [],
+  "soltos_msg": []
+ },
+ "fios": {
+  "ok": true,
+  "n": 159,
+  "atravessam": []
+ },
+ "avisos": [],
+ "erros": [],
+ "estatico_ok": true
+}

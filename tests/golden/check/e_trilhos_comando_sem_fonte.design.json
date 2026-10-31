@@ -20,7 +20,7 @@
  },
  "avisos": [],
  "erros": [
-  "layout invalido: trilhos_comando sem 'transformador' nem 'fonte': o par de trilhos ficaria sem alimentacao"
+  "layout invalido: trilhos_comando sem 'transformador', 'fonte' nem 'disjuntor': o par de trilhos ficaria sem alimentacao"
  ],
  "estatico_ok": false
 }

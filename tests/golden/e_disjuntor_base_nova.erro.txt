@@ -1,0 +1,1 @@
+trilhos_comando.disjuntor: o trilho de baixo 'C2' tem de existir (ex.: 'N'); so o de cima e alimentado pelo disjuntor

@@ -1,0 +1,1 @@
+trilhos_comando.disjuntor: classe 6009 precisa de 2 terminais A/B (use 6010, disjuntor de 1 polo)
